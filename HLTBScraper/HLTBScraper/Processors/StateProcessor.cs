@@ -1,4 +1,5 @@
 ﻿using HLTBScraper.Objects;
+using HLTBScraper.Processors.Maps;
 using HLTBScraper.Processors.Objects;
 using System;
 using System.Collections.Generic;
@@ -10,37 +11,67 @@ namespace HLTBScraper.Processors
 {
     internal class StateProcessor
     {
-        private MachineCore core;
-        private bool IsFinished;
-        public GameData GameInformation { get; }
+        private readonly MachineCore Core;
+        public bool IsFinished;
+        private ProcessorMap Map { get; }
+        private Dictionary<StateTransition, ProcessState> Transitions { get; }
 
-        public StateProcessor(string startState, IEnumerable<StateTransition> transitions)
+        public StateProcessor(ProcessState startState)
         {
-            //core = new MachineCore(startState, transitions);
-            //IsFinished = false;
-            //GameInformation = new GameData();
+            this.Transitions = GenerateStateTransitions();
+            this.Map = new ProcessorMap();
+            this.IsFinished = false;
+
+            this.Core = new MachineCore(startState, Transitions);
         }
 
-        public void Enumerate()
+        public void Enumerate(ref GameData gameData)
         {
-            
+            var startMovement = StateCommand.Forward;
+
+            while (this.IsFinished == false)
+            {
+                DrillNode(ref gameData, ref startMovement);
+                Console.ReadLine();
+            }
         }
         
-        private void EnumerationFinished()
+        private void DrillNode(ref GameData gameData, ref StateCommand movement)
         {
-            IsFinished = true;
+            var currentState = Core.CurrentState;
+
+            // if our state is terminated, exit
+            if (currentState == ProcessState.Terminated)
+                this.IsFinished = true;
+
+            // do our work here
+            var thingToDo = Map.GetValues(currentState);
+            Console.WriteLine(thingToDo.NextCommand.ToString() + ' ' + String.Join(", ", thingToDo.Values) + ' ' + Core.CurrentState);
+            movement = thingToDo.NextCommand;
+
+            // tell the state machine to transition, and run our method again
+            Core.MoveNext(movement);
+            DrillNode(ref gameData, ref movement);
+            
         }
 
-        private void DrillNode(ref GameData gameData)
+        private Dictionary<StateTransition, ProcessState> GenerateStateTransitions()
         {
-
-        }
-
-        private void GenerateStateTransitions()
-        {
-            var trans = new List<StateTransition>()
+            var trans = new Dictionary<StateTransition, ProcessState>()
             {
+                { new StateTransition(ProcessState.Start, StateCommand.Forward), ProcessState.MainTables },
+                { new StateTransition(ProcessState.Start, StateCommand.Backward), ProcessState.Terminated },
+                { new StateTransition(ProcessState.MainTables, StateCommand.Forward), ProcessState.BodyTables },
+                { new StateTransition(ProcessState.MainTables, StateCommand.Backward), ProcessState.Terminated },
+                { new StateTransition(ProcessState.BodyTables, StateCommand.Forward), ProcessState.Rows },
+                { new StateTransition(ProcessState.BodyTables, StateCommand.Backward), ProcessState.MainTables},
+                { new StateTransition(ProcessState.Rows, StateCommand.Forward), ProcessState.Elements },
+                { new StateTransition(ProcessState.Rows, StateCommand.Backward), ProcessState.BodyTables },
+                { new StateTransition(ProcessState.Elements, StateCommand.Forward), ProcessState.Rows },
+                { new StateTransition(ProcessState.Elements, StateCommand.Backward), ProcessState.Rows }
             };
+
+            return trans;
         }
     }
 }

@@ -138,6 +138,9 @@
     <Compile Include="Objects\GameDataCategory.cs" />
     <Compile Include="Objects\GameDataSubCategory.cs" />
     <Compile Include="Processors\MachineCore.cs" />
+    <Compile Include="Processors\Maps\MapItem.cs" />
+    <Compile Include="Processors\Maps\ProcessorMap.cs" />
+    <Compile Include="Processors\Objects\CombinedTransitionState.cs" />
     <Compile Include="Processors\Objects\StateCommand.cs" />
     <Compile Include="Processors\Objects\ProcessState.cs" />
     <Compile Include="Processors\Objects\StateTransition.cs" />
